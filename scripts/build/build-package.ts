@@ -52,7 +52,7 @@ runMain(async () => {
 })
 
 async function buildBundle({ filename, verbose }: { filename: string; verbose: boolean }) {
-  await fs.rm('./bundle', { recursive: true, force: true })
+  await rmDirectoryWithRetry('./bundle')
   return new Promise<void>((resolve, reject) => {
     webpack(
       webpackBase({
@@ -84,7 +84,7 @@ async function buildBundle({ filename, verbose }: { filename: string; verbose: b
 }
 
 async function buildModules({ outDir, module, verbose }: { outDir: string; module: string; verbose: boolean }) {
-  await fs.rm(outDir, { recursive: true, force: true })
+  await rmDirectoryWithRetry(outDir)
 
   // TODO: in the future, consider building packages with something else than typescript (ex:
   // rspack, tsdown...)
@@ -109,6 +109,15 @@ async function buildModules({ outDir, module, verbose }: { outDir: string; modul
   }
 
   await replaceBuildEnvInDirectory(outDir, { verbose })
+}
+
+async function rmDirectoryWithRetry(dir: string) {
+  await fs.rm(dir, {
+    recursive: true,
+    force: true,
+    maxRetries: 10,
+    retryDelay: 100,
+  })
 }
 
 async function replaceBuildEnvInDirectory(dir: string, { verbose }: { verbose: boolean }) {

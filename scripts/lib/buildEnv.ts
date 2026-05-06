@@ -50,7 +50,18 @@ const buildEnvFactories: BuildEnvFactories = {
   SDK_SETUP: () => getSdkSetup(),
   WORKER_STRING: () => {
     if (needsWorkerRebuild()) {
-      command`yarn build`.withCurrentWorkingDirectory(WORKER_PATH).run()
+      try {
+        command`yarn build`.withCurrentWorkingDirectory(WORKER_PATH).run()
+      } catch (error) {
+        const bundlePath = path.join(WORKER_PATH, 'bundle/worker.js')
+        if (!fs.existsSync(bundlePath)) {
+          throw error
+        }
+        console.warn(
+          '[buildEnv] Failed to rebuild worker bundle, reusing existing bundle/worker.js.',
+          error instanceof Error ? error.message : error
+        )
+      }
     }
     return fs.readFileSync(path.join(WORKER_PATH, 'bundle/worker.js'), {
       encoding: 'utf-8',
