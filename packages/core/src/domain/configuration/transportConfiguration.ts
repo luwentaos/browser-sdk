@@ -50,12 +50,18 @@ export function computeTransportConfiguration(
     return computeReportingTransportConfiguration(initConfiguration, sourceOverride)
   }
 
+  const clientToken = initConfiguration.clientToken
+  if (!clientToken) {
+    throw new Error('Client Token is not configured.')
+  }
+
   const site = initConfiguration.site || INTAKE_SITE_US1
   const source = validateSource(initConfiguration.source)
   const transportSource: TransportSource = sourceOverride ?? source
 
   const resolvedConfiguration: ResolvedSourceInitConfiguration = {
     ...initConfiguration,
+    clientToken,
     site,
     source: transportSource,
   }
@@ -63,7 +69,7 @@ export function computeTransportConfiguration(
   const replicaConfiguration = computeReplicaConfiguration(resolvedConfiguration)
 
   return {
-    clientToken: initConfiguration.clientToken,
+    clientToken,
     proxy: initConfiguration.proxy,
     replica: replicaConfiguration,
     site,
