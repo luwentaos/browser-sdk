@@ -50,6 +50,18 @@ describe('validateAndBuildConfiguration', () => {
       expect(displaySpy).toHaveBeenCalledOnceWith('Client Token is not configured, we will not send any data.')
     })
 
+    it('allows missing clientToken in reporting mode', () => {
+      const configuration = validateAndBuildConfiguration({
+        reporting: {
+          endpoint: 'https://collector.example.com/browser/intake',
+          appName: 'web-main',
+        },
+      })
+
+      expect(configuration).toBeDefined()
+      expect(displaySpy).not.toHaveBeenCalled()
+    })
+
     it("shouldn't display any error if the configuration is correct", () => {
       validateAndBuildConfiguration({ clientToken: 'yes' })
       expect(displaySpy).not.toHaveBeenCalled()
@@ -163,6 +175,60 @@ describe('validateAndBuildConfiguration', () => {
       expect(displaySpy).toHaveBeenCalledOnceWith(
         `Site should be a valid Datadog site. ${MORE_DETAILS} ${DOCS_ORIGIN}/getting_started/site/.`
       )
+    })
+
+    it('should ignore site validation in reporting mode', () => {
+      const configuration = validateAndBuildConfiguration({
+        site: 'foo.com' as any,
+        reporting: {
+          endpoint: 'https://collector.example.com/browser/intake',
+          appName: 'web-main',
+        },
+      })
+
+      expect(configuration).toBeDefined()
+      expect(displaySpy).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('reporting parameter validation', () => {
+    it('requires endpoint in reporting mode', () => {
+      expect(
+        validateAndBuildConfiguration({
+          reporting: {
+            endpoint: undefined as any,
+            appName: 'web-main',
+          },
+        })
+      ).toBeUndefined()
+      expect(displaySpy).toHaveBeenCalledOnceWith('Reporting endpoint is not configured, we will not send any data.')
+    })
+
+    it('requires appName in reporting mode', () => {
+      expect(
+        validateAndBuildConfiguration({
+          reporting: {
+            endpoint: 'https://collector.example.com/browser/intake',
+            appName: undefined as any,
+          },
+        })
+      ).toBeUndefined()
+      expect(displaySpy).toHaveBeenCalledOnceWith('Reporting appName is not configured, we will not send any data.')
+    })
+
+    it('validates reporting headers as strings', () => {
+      expect(
+        validateAndBuildConfiguration({
+          reporting: {
+            endpoint: 'https://collector.example.com/browser/intake',
+            appName: 'web-main',
+            headers: {
+              Authorization: 1 as any,
+            },
+          },
+        })
+      ).toBeUndefined()
+      expect(displaySpy).toHaveBeenCalledOnceWith('Reporting header "Authorization" must be defined as a string')
     })
   })
 

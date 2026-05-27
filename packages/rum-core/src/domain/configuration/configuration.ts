@@ -17,6 +17,7 @@ import type { RumEvent } from '../../rumEvent.types'
 import type { RumPlugin } from '../plugins'
 import type { PropagatorType, TracingOption } from '../tracing/tracer.types'
 import { getRemoteConfigurationId } from './remoteConfiguration'
+import { resolveReportingApplicationId } from './reportingRumConfiguration'
 
 export const DEFAULT_PROPAGATOR_TYPES: PropagatorType[] = ['tracecontext', 'datadog']
 
@@ -93,7 +94,7 @@ export interface RumInitConfiguration extends InitConfiguration {
    *
    * @category Authentication
    */
-  applicationId: string
+  applicationId?: string
 
   /**
    * Whether to propagate user and account IDs in the baggage header of trace requests.
@@ -410,7 +411,7 @@ export function validateAndBuildRumConfiguration(
     display.warn('trackFeatureFlagsForEvents should be an array')
   }
 
-  if (!initConfiguration.applicationId) {
+  if (!initConfiguration.reporting && !initConfiguration.applicationId) {
     display.error('Application ID is not configured, no RUM data will be collected.')
     return
   }
@@ -443,7 +444,9 @@ export function validateAndBuildRumConfiguration(
   const sessionReplaySampleRate = initConfiguration.sessionReplaySampleRate ?? 0
 
   return {
-    applicationId: initConfiguration.applicationId,
+    applicationId: initConfiguration.reporting
+      ? resolveReportingApplicationId(initConfiguration)
+      : initConfiguration.applicationId!,
     actionNameAttribute: initConfiguration.actionNameAttribute,
     sessionReplaySampleRate,
     startSessionReplayRecordingManually:

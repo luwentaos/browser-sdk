@@ -35,6 +35,23 @@ describe('transportConfiguration', () => {
     )
   })
 
+  describe('reporting mode', () => {
+    it('builds the endpoint from reporting endpoint and appName', () => {
+      const configuration = computeTransportConfiguration({
+        reporting: {
+          endpoint: 'https://collector.example.com/browser/intake',
+          appName: 'web-main',
+        },
+      })
+
+      const rumEndpoint = configuration.rumEndpointBuilder.build('fetch', DEFAULT_PAYLOAD)
+
+      expect(rumEndpoint).toContain('https://collector.example.com/browser/intake?')
+      expect(rumEndpoint).toContain('app=web-main')
+      expect(rumEndpoint).not.toContain('dd-api-key=')
+    })
+  })
+
   describe('isIntakeUrl', () => {
     const v1IntakePath = `/v1/input/${clientToken}`
     ;[

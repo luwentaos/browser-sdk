@@ -16,13 +16,14 @@ export const SPEC_ENDPOINTS = {
 }
 
 export function mockEndpointBuilder(url: string) {
-  return { build: (..._: any) => url } as EndpointBuilder
+  return { build: (..._: any) => url, buildRequestInit: () => undefined } as EndpointBuilder
 }
 
 export interface Request {
   type: 'sendBeacon' | 'fetch'
   url: string
   body: string
+  headers?: HeadersInit
 }
 
 export function interceptRequests() {
@@ -56,6 +57,7 @@ export function interceptRequests() {
       type: 'fetch',
       url: url as string,
       body: config?.body as string,
+      headers: config?.headers,
     })
     return fetchPromise()
       .then((response) => response as Response)

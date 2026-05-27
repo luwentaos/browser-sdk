@@ -6,6 +6,7 @@ import type { RawError } from '../domain/error/error.types'
 import { Observable } from '../tools/observable'
 import { ONE_KIBI_BYTE } from '../tools/utils/byteUtils'
 import { newRetryState, sendWithRetryStrategy } from './sendWithRetryStrategy'
+import { buildEndpointRequestInit } from './reportingRequestTransformer'
 
 /**
  * beacon payload max queue size implementation is 64kb
@@ -107,8 +108,9 @@ export function createHttpRequest<Body extends Payload = Payload>(
 }
 
 function sendBeaconStrategy(endpointBuilder: EndpointBuilder, bytesLimit: number, payload: Payload) {
+  const requestInit = buildEndpointRequestInit(endpointBuilder, payload)
   const canUseBeacon = payload.bytesCount < bytesLimit
-  if (canUseBeacon) {
+  if (canUseBeacon && !requestInit?.headers) {
     try {
       const beaconUrl = endpointBuilder.build('beacon', payload)
       const isQueued = navigator.sendBeacon(beaconUrl, payload.data)
@@ -139,8 +141,9 @@ export function fetchStrategy(
   onResponse?: (r: HttpResponse) => void
 ) {
   const fetchUrl = endpointBuilder.build('fetch', payload)
+  const requestInit = buildEndpointRequestInit(endpointBuilder, payload)
 
-  fetch(fetchUrl, { method: 'POST', body: payload.data, mode: 'cors' })
+  fetch(fetchUrl, { method: 'POST', body: payload.data, mode: 'cors', ...requestInit })
     .then(monitor((response: Response) => onResponse?.({ status: response.status, type: response.type })))
     .catch(monitor(() => onResponse?.({ status: 0 })))
 }

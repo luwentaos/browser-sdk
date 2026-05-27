@@ -6,6 +6,8 @@ export {
   validateAndBuildConfiguration,
   serializeConfiguration,
 } from './configuration'
+export type { ReportingConfiguration } from './reportingConfiguration'
+export { isReportingMode, validateAndBuildReportingConfiguration } from './reportingConfiguration'
 export type { EndpointBuilder, TrackType } from './endpointBuilder'
 export { createEndpointBuilder, buildEndpointHost } from './endpointBuilder'
 export { computeTransportConfiguration, isIntakeUrl } from './transportConfiguration'

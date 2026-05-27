@@ -21,6 +21,13 @@ export const EXHAUSTIVE_INIT_CONFIGURATION: Required<InitConfiguration> = {
   trackingConsent: 'not-granted',
   proxy: 'proxy',
   site: 'datadoghq.com',
+  reporting: {
+    endpoint: 'https://collector.example.com/browser/intake',
+    appName: 'web-main',
+    headers: {
+      Authorization: 'Bearer xxx',
+    },
+  },
   service: 'service',
   env: 'env',
   version: 'version',
@@ -73,6 +80,7 @@ export type MapInitConfigurationKey<Key extends string> =
     : // Those keys should not be serialized
       Key extends
           | 'site'
+          | 'reporting'
           | 'service'
           | 'clientToken'
           | 'env'

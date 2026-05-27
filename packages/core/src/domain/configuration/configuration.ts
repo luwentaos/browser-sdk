@@ -12,6 +12,8 @@ import { isAllowedTrackingOrigins } from '../allowedTrackingOrigins'
 import type { Site } from '../intakeSites'
 import type { TransportConfiguration } from './transportConfiguration'
 import { computeTransportConfiguration } from './transportConfiguration'
+import type { ReportingConfiguration } from './reportingConfiguration'
+import { isReportingMode, validateAndBuildReportingConfiguration } from './reportingConfiguration'
 
 /**
  * Default privacy level for the browser SDK.
@@ -50,7 +52,7 @@ export interface InitConfiguration {
    *
    * @category Authentication
    */
-  clientToken: string
+  clientToken?: string
 
   /**
    * A callback function that can be used to modify events before they are sent to Datadog.
@@ -142,6 +144,13 @@ export interface InitConfiguration {
    * @defaultValue datadoghq.com
    */
   site?: Site | undefined
+
+  /**
+   * Reporting endpoint configuration for sending data to a custom intake.
+   *
+   * @category Transport
+   */
+  reporting?: ReportingConfiguration | undefined
 
   // tag and context options
   /**
@@ -305,6 +314,7 @@ export interface Configuration extends TransportConfiguration {
   // internal
   sdkVersion: string | undefined
   variant: string | undefined
+  reporting?: ReportingConfiguration | undefined
 }
 
 function isString(tag: unknown, tagName: string): tag is string | undefined | null {
@@ -335,7 +345,19 @@ export function validateAndBuildConfiguration(
   initConfiguration: InitConfiguration,
   errorStack?: string
 ): Configuration | undefined {
-  if (!initConfiguration || !initConfiguration.clientToken) {
+  if (!initConfiguration) {
+    display.error('Client Token is not configured, we will not send any data.')
+    return
+  }
+
+  const reportingConfiguration = validateAndBuildReportingConfiguration(initConfiguration.reporting)
+  const reportingMode = isReportingMode(initConfiguration)
+
+  if (reportingMode && !reportingConfiguration) {
+    return
+  }
+
+  if (!reportingMode && !initConfiguration.clientToken) {
     display.error('Client Token is not configured, we will not send any data.')
     return
   }
@@ -349,7 +371,7 @@ export function validateAndBuildConfiguration(
   }
 
   if (
-    !isDatadogSite(initConfiguration.site) ||
+    (!reportingMode && !isDatadogSite(initConfiguration.site)) ||
     !isSampleRate(initConfiguration.sessionSampleRate, 'Session') ||
     !isSampleRate(initConfiguration.telemetrySampleRate, 'Telemetry') ||
     !isSampleRate(initConfiguration.telemetryConfigurationSampleRate, 'Telemetry Configuration') ||
@@ -394,6 +416,7 @@ export function validateAndBuildConfiguration(
      */
     variant: initConfiguration.variant,
     sdkVersion: initConfiguration.sdkVersion,
+    reporting: reportingConfiguration,
 
     ...computeTransportConfiguration(initConfiguration),
   }

@@ -34,6 +34,21 @@ describe('validateAndBuildRumConfiguration', () => {
         'Application ID is not configured, no RUM data will be collected.'
       )
     })
+
+    it('allows missing applicationId in reporting mode', () => {
+      const configuration = validateAndBuildRumConfiguration({
+        clientToken: undefined,
+        applicationId: undefined,
+        reporting: {
+          endpoint: 'https://collector.example.com/browser/intake',
+          appName: 'web-main',
+        },
+      } as RumInitConfiguration)
+
+      expect(configuration).toBeDefined()
+      expect(configuration!.applicationId).toBe('00000000-0000-0000-0000-000000000001')
+      expect(displayErrorSpy).not.toHaveBeenCalled()
+    })
   })
 
   describe('sessionReplaySampleRate', () => {

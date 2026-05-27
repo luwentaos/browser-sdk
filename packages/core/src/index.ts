@@ -1,4 +1,4 @@
-export type { Configuration, InitConfiguration, EndpointBuilder, ProxyFn } from './domain/configuration'
+export type { Configuration, InitConfiguration, EndpointBuilder, ProxyFn, ReportingConfiguration } from './domain/configuration'
 export {
   validateAndBuildConfiguration,
   DefaultPrivacyLevel,
@@ -8,6 +8,7 @@ export {
   buildEndpointHost,
   isIntakeUrl,
   computeTransportConfiguration,
+  isReportingMode,
 } from './domain/configuration'
 export * from './domain/intakeSites'
 export type { TrackingConsentState } from './domain/trackingConsent'

@@ -32,13 +32,17 @@ type EndpointBuilderInitConfiguration = Omit<InitConfiguration, 'source'> & {
   source?: TransportSource
 }
 
-export type EndpointBuilder = ReturnType<typeof createEndpointBuilder>
+export interface EndpointBuilder {
+  build: (api: ApiType, payload: Payload) => string
+  trackType: TrackType
+  buildRequestInit?: (payload: Payload) => Pick<RequestInit, 'headers'> | undefined
+}
 
 export function createEndpointBuilder(
   initConfiguration: EndpointBuilderInitConfiguration,
   trackType: TrackType,
   extraParameters?: string[]
-) {
+): EndpointBuilder {
   const buildUrlWithParameters = createEndpointUrlWithParametersBuilder(initConfiguration, trackType)
 
   return {
@@ -47,6 +51,7 @@ export function createEndpointBuilder(
       return buildUrlWithParameters(parameters)
     },
     trackType,
+    buildRequestInit: () => undefined,
   }
 }
 

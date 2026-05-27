@@ -40,6 +40,19 @@ describe('httpRequest', () => {
       expect(requests[0].body).toEqual(payloadData)
     })
 
+    it('should forward custom headers from the endpoint builder', async () => {
+      endpointBuilder = {
+        ...mockEndpointBuilder(ENDPOINT_URL),
+        buildRequestInit: () => ({ headers: { Authorization: 'Bearer xxx', 'X-App': 'web-main' } }),
+      }
+      request = createHttpRequest([endpointBuilder], noop)
+
+      request.send({ data: '{"foo":"bar1"}', bytesCount: 10 })
+      await interceptor.waitForAllFetchCalls()
+
+      expect(requests[0].headers).toEqual({ Authorization: 'Bearer xxx', 'X-App': 'web-main' })
+    })
+
     it('should use fetch for payloads exceeding the bytes limit', async () => {
       request.send({ data: '{"foo":"bar1"}\n{"foo":"bar2"}', bytesCount: RECOMMENDED_REQUEST_BYTES_LIMIT })
       await interceptor.waitForAllFetchCalls()
@@ -115,6 +128,21 @@ describe('httpRequest', () => {
 
       expect(requests.length).toEqual(1)
       expect(requests[0].type).toBe('sendBeacon')
+    })
+
+    it('should fallback to fetch when custom headers are configured', async () => {
+      endpointBuilder = {
+        ...mockEndpointBuilder(ENDPOINT_URL),
+        buildRequestInit: () => ({ headers: { Authorization: 'Bearer xxx' } }),
+      }
+      request = createHttpRequest([endpointBuilder], noop)
+
+      request.sendOnExit({ data: '{"foo":"bar1"}\n{"foo":"bar2"}', bytesCount: 10 })
+      await interceptor.waitForAllFetchCalls()
+
+      expect(requests.length).toEqual(1)
+      expect(requests[0].type).toBe('fetch')
+      expect(requests[0].headers).toEqual({ Authorization: 'Bearer xxx' })
     })
 
     it('should use fetch over sendBeacon when the bytes count is too high', async () => {

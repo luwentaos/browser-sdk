@@ -3,6 +3,8 @@ import { INTAKE_SITE_US1, INTAKE_URL_PARAMETERS } from '../intakeSites'
 import type { InitConfiguration, ProxyFn, SdkSource } from './configuration'
 import type { EndpointBuilder, TransportSource } from './endpointBuilder'
 import { createEndpointBuilder } from './endpointBuilder'
+import { isReportingMode } from './reportingConfiguration'
+import { computeReportingTransportConfiguration } from './reportingTransportConfiguration'
 
 export interface TransportConfiguration {
   logsEndpointBuilder: EndpointBuilder
@@ -44,6 +46,10 @@ export function computeTransportConfiguration(
   initConfiguration: InitConfiguration,
   sourceOverride?: TransportSource
 ): TransportConfiguration {
+  if (isReportingMode(initConfiguration)) {
+    return computeReportingTransportConfiguration(initConfiguration, sourceOverride)
+  }
+
   const site = initConfiguration.site || INTAKE_SITE_US1
   const source = validateSource(initConfiguration.source)
   const transportSource: TransportSource = sourceOverride ?? source

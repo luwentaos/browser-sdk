@@ -17,6 +17,12 @@ import {
 const DEFAULT_INIT_CONFIGURATION = { clientToken: 'xxx' }
 
 describe('validateAndBuildLogsConfiguration', () => {
+  let displayErrorSpy: jasmine.Spy<typeof display.error>
+
+  beforeEach(() => {
+    displayErrorSpy = spyOn(display, 'error')
+  })
+
   describe('forwardErrorsToLogs', () => {
     it('defaults to true if the option is not provided', () => {
       expect(validateAndBuildLogsConfiguration(DEFAULT_INIT_CONFIGURATION)!.forwardErrorsToLogs).toBeTrue()
@@ -77,6 +83,43 @@ describe('validateAndBuildLogsConfiguration', () => {
           forwardConsoleLogs: ['error'],
         })!.forwardConsoleLogs
       ).toEqual(['error'])
+    })
+  })
+
+  describe('reporting mode', () => {
+    it('allows missing clientToken when reporting is configured', () => {
+      const configuration = validateAndBuildLogsConfiguration({
+        reporting: {
+          endpoint: 'https://collector.example.com/browser/intake',
+          appName: 'web-main',
+        },
+      })
+
+      expect(configuration).toBeDefined()
+      expect(displayErrorSpy).not.toHaveBeenCalled()
+    })
+
+    it('uses reporting transport for logs endpoint', () => {
+      const configuration = validateAndBuildLogsConfiguration({
+        reporting: {
+          endpoint: 'https://collector.example.com/browser/intake',
+          appName: 'web-main',
+          headers: {
+            Authorization: 'Bearer xxx',
+          },
+        },
+      })!
+
+      const endpoint = configuration.logsEndpointBuilder.build('fetch', { data: '{}', bytesCount: 2 })
+
+      expect(endpoint).toContain('https://collector.example.com/browser/intake?')
+      expect(endpoint).toContain('app=web-main')
+      expect(endpoint).not.toContain('dd-api-key=')
+      expect(configuration.logsEndpointBuilder.buildRequestInit!({ data: '{}', bytesCount: 2 })).toEqual({
+        headers: {
+          Authorization: 'Bearer xxx',
+        },
+      })
     })
   })
 })
